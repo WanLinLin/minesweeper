@@ -38,6 +38,7 @@ const initBoard = ({ rowSize, colSize }) => {
       type: CELL_TYPE.EMPTY,
       isOpen: false,
       isMarked: false,
+      hintNumber: 0,
     }))
   );
 };
@@ -59,7 +60,8 @@ const updateMineBoard = ({ board, mineCount, noMinePosition }) => {
     board[row][col].type = CELL_TYPE.MINE;
     getNeighborCoordinates({ row, col, board }).forEach(([x, y]) => {
       if (board[x][y].type !== CELL_TYPE.MINE) {
-        board[x][y].type += 1;
+        board[x][y].type = CELL_TYPE.HINT;
+        board[x][y].hintNumber += 1;
       }
     });
     count--;
@@ -73,7 +75,7 @@ const copyBoard = (board) => {
 const expandCell = ({ board, row, col }) => {
   board[row][col].isOpen = true;
 
-  if (![CELL_TYPE.MINE, CELL_TYPE.EMPTY].includes(board[row][col].type)) return;
+  if (board[row][col].type === CELL_TYPE.HINT) return;
 
   getNeighborCoordinates({ row, col, board }).forEach(([x, y]) => {
     if (!board[x][y].isOpen) {
@@ -146,6 +148,7 @@ export const Board = ({
   const handleDoubleClick = (e) => {
     const { row, col } = e.target.dataset;
     if (!row || !col) return;
+    if (board[row][col].type !== CELL_TYPE.HINT) return;
 
     const coordinates = getNeighborCoordinates({
       row: Number(row),
@@ -160,18 +163,19 @@ export const Board = ({
       }
     });
 
-    if (markedCount === board[row][col].type) {
+    if (markedCount === board[row][col].hintNumber) {
       const newBoard = copyBoard(board);
       let expandOnMine = false;
+
       coordinates.forEach(([x, y]) => {
         const cell = newBoard[x][y];
-        if (!cell.isMarked && !cell.isOpen) {
-          if (cell.type === CELL_TYPE.EMPTY) {
-            expandCell({ board: newBoard, row: x, col: y });
-          } else {
-            cell.isOpen = true;
-            expandOnMine ||= cell.type === CELL_TYPE.MINE;
-          }
+        if (cell.isMarked || cell.isOpen) return;
+
+        if (cell.type === CELL_TYPE.EMPTY) {
+          expandCell({ board: newBoard, row: x, col: y });
+        } else {
+          cell.isOpen = true;
+          expandOnMine ||= cell.type === CELL_TYPE.MINE;
         }
       });
 
@@ -200,6 +204,7 @@ export const Board = ({
               type={cell.type}
               isOpen={cell.isOpen}
               isMarked={cell.isMarked}
+              hintNumber={cell.hintNumber}
             />
           ))}
         </Row>

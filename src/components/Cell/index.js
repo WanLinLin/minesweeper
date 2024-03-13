@@ -2,20 +2,30 @@ import cx from "classnames";
 import style from "./style.module.scss";
 import { CELL_TYPE } from "../../constant";
 
-const getContent = (type) => {
+const getContent = ({ type, hintNumber }) => {
   switch (type) {
     case CELL_TYPE.MINE:
       return "💣";
     case CELL_TYPE.EMPTY:
       return null;
+    case CELL_TYPE.HINT:
+      return hintNumber;
     default:
-      return type;
+      return null;
   }
 };
 
-export const Cell = ({ type, onClick, row, col, isOpen, isMarked }) => {
-  const content = getContent(type);
-  const cover = isMarked ? "🚩" : null
+export const Cell = ({
+  type,
+  onClick,
+  row,
+  col,
+  isOpen,
+  isMarked,
+  hintNumber,
+}) => {
+  const content = getContent({ type, hintNumber });
+  const cover = isMarked ? "🚩" : null;
 
   const handleClick = () => {
     onClick({ row, col });
