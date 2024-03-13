@@ -1,0 +1,14 @@
+.root {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 40px;
+  height: 40px;
+  border: solid 1px black;
+  user-select: none;
+  background-color: gray;
+}
+
+.opened {
+  background-color: white;
+}
