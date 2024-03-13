@@ -1,4 +1,4 @@
-export const CELL_CONTENT = {
+export const CELL_TYPE = {
   MINE: -1,
   EMPTY: 0,
 };

@@ -1,12 +1,12 @@
 import cx from "classnames";
 import style from "./style.module.scss";
-import { CELL_CONTENT } from "../../constant";
+import { CELL_TYPE } from "../../constant";
 
 const getContent = (type) => {
   switch (type) {
-    case CELL_CONTENT.MINE:
+    case CELL_TYPE.MINE:
       return "💣";
-    case CELL_CONTENT.EMPTY:
+    case CELL_TYPE.EMPTY:
       return null;
     default:
       return type;

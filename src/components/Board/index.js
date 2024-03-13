@@ -1,16 +1,8 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Cell } from "../Cell";
 import { Row } from "../Row";
 import style from "./style.module.scss";
-import { CELL_CONTENT } from "../../constant";
-
-const BOARD_SETTING = {
-  easy: {
-    rowSize: 8,
-    colSize: 10,
-    mineCount: 10,
-  },
-};
+import { CELL_TYPE } from "../../constant";
 
 const getNeighborCoordinates = ({ row, col, board }) => {
   const rowSize = board.length;
@@ -43,7 +35,7 @@ const getRandomNumber = (min, max) => {
 const initBoard = ({ rowSize, colSize }) => {
   return Array.from({ length: rowSize }, () =>
     Array.from({ length: colSize }, () => ({
-      type: CELL_CONTENT.EMPTY,
+      type: CELL_TYPE.EMPTY,
       isOpen: false,
       isMarked: false,
     }))
@@ -62,11 +54,11 @@ const updateMineBoard = ({ board, mineCount, noMinePosition }) => {
     const col = getRandomNumber(0, colSize - 1);
     const isNoBombPosition =
       row === noMinePosition.row && col === noMinePosition.col;
-    if (board[row][col].type === CELL_CONTENT.MINE || isNoBombPosition) {
+    if (board[row][col].type === CELL_TYPE.MINE || isNoBombPosition) {
       continue;
     }
 
-    board[row][col].type = CELL_CONTENT.MINE;
+    board[row][col].type = CELL_TYPE.MINE;
     for (const [dx, dy] of [
       [0, 1],
       [0, -1],
@@ -84,7 +76,7 @@ const updateMineBoard = ({ board, mineCount, noMinePosition }) => {
         x < rowSize &&
         y >= 0 &&
         y < colSize &&
-        board[x][y].type !== CELL_CONTENT.MINE
+        board[x][y].type !== CELL_TYPE.MINE
       ) {
         board[x][y].type += 1;
       }
@@ -102,7 +94,7 @@ const expandCell = ({ board, row, col }) => {
   const colSize = board[0].length;
   board[row][col].isOpen = true;
 
-  if (![CELL_CONTENT.MINE, CELL_CONTENT.EMPTY].includes(board[row][col].type))
+  if (![CELL_TYPE.MINE, CELL_TYPE.EMPTY].includes(board[row][col].type))
     return;
 
   for (const [dx, dy] of [
@@ -123,10 +115,14 @@ const expandCell = ({ board, row, col }) => {
   }
 };
 
-export const Board = ({ difficulty }) => {
-  const boardSetting = BOARD_SETTING[difficulty];
+export const Board = ({
+  boardSetting,
+  setFlagCount,
+  onGameResult,
+}) => {
   const [board, setBoard] = useState(() => initBoard(boardSetting));
   const [bombInitialized, setBombInitialized] = useState(false);
+  const remainingMines = useRef(boardSetting.mineCount);
 
   const handleCellClick = ({ row, col }) => {
     const { isMarked, isOpen } = board[row][col].isMarked;
@@ -144,12 +140,12 @@ export const Board = ({ difficulty }) => {
       setBombInitialized(true);
     }
 
-    if (board[row][col].type === CELL_CONTENT.EMPTY) {
+    if (board[row][col].type === CELL_TYPE.EMPTY) {
       expandCell({ board: newBoard, row, col });
     }
 
-    if (board[row][col].type === CELL_CONTENT.MINE) {
-      // lose game
+    if (board[row][col].type === CELL_TYPE.MINE) {
+      onGameResult({ isWining: false });
     }
 
     setBoard(newBoard);
@@ -159,48 +155,69 @@ export const Board = ({ difficulty }) => {
     const { row, col } = e.target.dataset;
     if (!row || !col) return;
 
-    setBoard((board) => {
-      const newBoard = copyBoard(board);
-      newBoard[row][col].isMarked = !newBoard[row][col].isMarked;
-      return newBoard;
-    });
     e.preventDefault();
+    if (board[row][col].isOpen) return;
+
+    const newBoard = copyBoard(board);
+    const cell = newBoard[row][col]
+    cell.isMarked = !cell.isMarked;
+
+    if (cell.isMarked) {
+      if (cell.type === CELL_TYPE.MINE) {
+        remainingMines.current--;
+      }
+      setFlagCount(count => count - 1);
+
+      if (remainingMines.current === 0) {
+        onGameResult({ isWining: true });
+      }
+    } else {
+      if (cell.type === CELL_TYPE.MINE) {
+        remainingMines.current++;
+      }
+      setFlagCount(count => count + 1);
+    }
+
+    setBoard(newBoard);
   };
 
   const handleDoubleClick = (e) => {
     const { row, col } = e.target.dataset;
     if (!row || !col) return;
 
-    setBoard((board) => {
-      const coordinates = getNeighborCoordinates({
-        row: Number(row),
-        col: Number(col),
-        board,
-      });
+    const coordinates = getNeighborCoordinates({
+      row: Number(row),
+      col: Number(col),
+      board,
+    });
 
-      let markedCount = 0;
+    let markedCount = 0;
+    coordinates.forEach(([x, y]) => {
+      if (board[x][y].isMarked) {
+        markedCount++;
+      }
+    });
+
+    if (markedCount === board[row][col].type) {
+      const newBoard = copyBoard(board);
+      let expandOnMine = false;
       coordinates.forEach(([x, y]) => {
-        if (board[x][y].isMarked) {
-          markedCount++;
+        if (!newBoard[x][y].isMarked && !newBoard[x][y].isOpen) {
+          if (newBoard[x][y].type === CELL_TYPE.EMPTY) {
+            expandCell({ board: newBoard, row: x, col: y });
+          } else {
+            if (newBoard[x][y].type === CELL_TYPE.MINE) {
+              expandOnMine = true;
+            }
+            newBoard[x][y].isOpen = true;
+          }
         }
       });
-
-      if (markedCount === board[row][col].type) {
-        const newBoard = copyBoard(board);
-        coordinates.forEach(([x, y]) => {
-          if (!newBoard[x][y].isMarked) {
-            if (newBoard[x][y].type === CELL_CONTENT.EMPTY) {
-              expandCell({ board: newBoard, row: x, col: y });
-            } else {
-              newBoard[x][y].isOpen = true;
-            }
-          }
-        });
-        return newBoard;
+      setBoard(newBoard);
+      if (expandOnMine) {
+        onGameResult({ isWining: false });
       }
-      
-      return board;
-    });
+    }
   };
 
   return (
