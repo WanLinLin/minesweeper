@@ -64,6 +64,7 @@ function App() {
           <Board
             key={boardKey}
             boardSetting={GAME_SETTING}
+            flagCount={flagCount}
             setFlagCount={setFlagCount}
             onGameResult={handleGameResult}
           />
