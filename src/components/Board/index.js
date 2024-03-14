@@ -86,7 +86,7 @@ export const Board = ({
   onGameResult,
 }) => {
   const [board, setBoard] = useState(() => initBoard(boardSetting));
-  const [bombInitialized, setBombInitialized] = useState(false);
+  const bombInitialized = useRef(false);
   const remainingMines = useRef(boardSetting.mineCount);
 
   const handleCellClick = ({ row, col }) => {
@@ -96,13 +96,13 @@ export const Board = ({
     const newBoard = copyBoard(board);
     newBoard[row][col].isOpen = true;
 
-    if (!bombInitialized) {
+    if (!bombInitialized.current) {
       updateMineBoard({
         board: newBoard,
         mineCount: boardSetting.mineCount,
         noMinePosition: { row, col },
       });
-      setBombInitialized(true);
+      bombInitialized.current = true
     }
 
     if (board[row][col].type === CELL_TYPE.EMPTY) {
