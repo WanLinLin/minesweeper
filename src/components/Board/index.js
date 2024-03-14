@@ -1,8 +1,11 @@
 import { useRef, useState } from "react";
+
+import { CELL_TYPE } from "../../constant";
 import { Cell } from "../Cell";
 import { Row } from "../Row";
+import { copyBoard, getRandomNumber } from "./utils";
+
 import style from "./style.module.scss";
-import { CELL_TYPE } from "../../constant";
 
 const getNeighborCoordinates = ({ row, col, board }) => {
   const rowSize = board.length;
@@ -26,10 +29,6 @@ const getNeighborCoordinates = ({ row, col, board }) => {
     }
   });
   return coordinates;
-};
-
-const getRandomNumber = (min, max) => {
-  return Math.floor(Math.random() * (max - min + 1) + min);
 };
 
 const initBoard = ({ rowSize, colSize }) => {
@@ -66,10 +65,6 @@ const updateMineBoard = ({ board, mineCount, noMinePosition }) => {
     });
     count--;
   }
-};
-
-const copyBoard = (board) => {
-  return [...board.map((row) => row.map((cell) => ({ ...cell })))];
 };
 
 const expandCell = ({ board, row, col }) => {
